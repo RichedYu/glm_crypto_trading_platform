@@ -65,3 +65,4 @@ logs/
 # Trading data (可选,根据需要调整)
 # data/
 # backtest_results/
+notebooks/

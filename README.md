@@ -49,6 +49,11 @@ All ports are now centrally managed through the new API proxy configuration (see
 - Detailed roadmap for optimization algorithms and emotion signals lives in `docs/prospect.md` (bilingual).  
 - Notebook experiments are under `notebooks/` (`01_data_exploration.ipynb`, `02_glm_volatility_model.ipynb`); remember to align library versions with service requirements.
 
+### Frontend Dashboard | 前端可视化
+
+- Comprehensive UI/UX + API requirements for the React visualization cockpit are documented in `frontend/README.md`.  
+- Includes tech stack, module breakdown (trading, sentiment, strategy, risk), performance guidelines, and phased roadmap for delivery.
+
 ### Security & Hygiene | 安全与规范
 
 - `.gitignore` now strips `.env`, logs, and editor files — run `git status` to ensure secrets stay local.  
