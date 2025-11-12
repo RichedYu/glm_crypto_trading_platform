@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+ccxt
+numpy
+pandas
+loguru
+python-dotenv
+aiohttp
+requests
+tenacity
+psutil

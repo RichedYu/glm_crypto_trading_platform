@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+loguru
+requests
+pandas
+numpy
+
+# 核心建模库
+statsmodels
+scikit-learn
+ccxt

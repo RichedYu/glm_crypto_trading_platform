@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', 'SF Pro Display', 'Roboto', sans-serif;
+  color-scheme: dark;
+  color: #f9fafb;
+  background-color: #0b0e11;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #0b0e11;
+}
+
+#root {
+  min-height: 100vh;
+}

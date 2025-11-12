@@ -1,0 +1,55 @@
+# /docker-compose.yml
+services:
+  trading_service:
+    build: ./services/trading_service
+    container_name: trading_service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/trading_service/app:/app/app
+      - ./data/trading_data:/app/data
+    env_file:
+      - ./services/trading_service/.env
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  sentiment_service:
+    build: ./services/sentiment_service
+    container_name: sentiment_service
+    ports:
+      - "8002:8000"
+    volumes:
+      # 只挂载app目录，避免覆盖镜像中已预下载的模型
+      - ./services/sentiment_service/app:/app/app
+    env_file:
+      - ./services/sentiment_service/.env
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  strategy_service:
+    build: ./services/strategy_service
+    container_name: strategy_service
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./services/strategy_service:/app
+      - ./data:/app/data
+    env_file:
+      - ./services/strategy_service/.env # 确保strategy_service也有自己的.env文件
+    restart: unless-stopped
+    networks:
+      - app-network
+    # 【修改】只依赖服务启动，不再检查健康状态
+    depends_on:
+      - sentiment_service
+
+networks:
+  app-network:
+    driver: bridge
+
+# 我们不再需要缓存卷，因为模型已经打包在镜像里了
+volumes:
+  trading_data:
+  sentiment_data:

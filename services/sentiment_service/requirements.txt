@@ -1,0 +1,15 @@
+# /services/sentiment_service/requirements.txt
+fastapi
+uvicorn[standard]
+pydantic-settings
+loguru
+python-dotenv
+requests
+
+# NLP & Machine Learning Libraries
+transformers
+torch
+pandas
+
+# Twitter API Client
+tweepy
