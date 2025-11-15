@@ -1,5 +1,22 @@
 # /docker-compose.yml
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: glm_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   trading_service:
     build: ./services/trading_service
     container_name: trading_service
@@ -10,9 +27,14 @@ services:
       - ./data/trading_data:/app/data
     env_file:
       - ./services/trading_service/.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     restart: unless-stopped
     networks:
       - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
 
   sentiment_service:
     build: ./services/sentiment_service
@@ -37,11 +59,10 @@ services:
       - ./services/strategy_service:/app
       - ./data:/app/data
     env_file:
-      - ./services/strategy_service/.env # 确保strategy_service也有自己的.env文件
+      - ./services/strategy_service/.env
     restart: unless-stopped
     networks:
       - app-network
-    # 【修改】只依赖服务启动，不再检查健康状态
     depends_on:
       - sentiment_service
 
@@ -49,7 +70,7 @@ networks:
   app-network:
     driver: bridge
 
-# 我们不再需要缓存卷，因为模型已经打包在镜像里了
 volumes:
+  redis_data:
   trading_data:
   sentiment_data:
