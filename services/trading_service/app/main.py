@@ -2,12 +2,23 @@
 
 import asyncio
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+import redis.asyncio as redis
 
 # --- 导入我们重构好的核心模块 ---
 from app.core.config import get_settings
 from app.core.exchange_client import ExchangeClient
 from app.trader.trader import GridTrader
+from app.messaging.redis_bus import RedisStreamBus
+from app.messaging.messages import (
+    OptionChainData,
+    PortfolioRiskEvent,
+    MacroStateEvent,
+    StrategySignalEvent
+)
+from app.api.options_api import router as options_router, init_options_api
+from app.state.portfolio_store import PortfolioStateStore
 
 # --- FastAPI 应用设置 ---
 # 1. 获取配置实例
@@ -20,20 +31,44 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# 允许跨域
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 3. 创建一个全局变量来持有交易机器人实例
 #    这确保了整个服务生命周期中只有一个机器人实例
 trader_instance: GridTrader = None
+message_bus: RedisStreamBus = None
+portfolio_store: PortfolioStateStore = None
+
+# 4. 注册 Options API 路由
+app.include_router(options_router)
 
 # --- 应用生命周期事件 ---
 @app.on_event("startup")
 async def startup_event():
     """
     【核心】应用启动时执行的异步函数。
-    负责初始化所有必要的对象，让服务进入“准备就绪”状态。
+    负责初始化所有必要的对象，让服务进入"准备就绪"状态。
     """
-    global trader_instance
+    global trader_instance, message_bus, portfolio_store
     logging.info("交易服务正在启动...")
     try:
+        # 0. 初始化消息总线 (只读模式，用于广播到WebSocket)
+        redis_client = redis.from_url(settings.redis_url)
+        message_bus = RedisStreamBus(redis_client, consumer_name="ws_broadcaster")
+        
+        # 0.1 初始化 Portfolio Store
+        portfolio_store = PortfolioStateStore(redis_client)
+        
+        # 0.2 初始化 Options API 依赖
+        init_options_api(portfolio_store, message_bus)
+
         # 1. 创建交易所客户端
         exchange = ExchangeClient()
         # 2. 创建交易机器人实例 (注意：不再传入config)
@@ -46,6 +81,11 @@ async def startup_event():
         logging.critical(f"❌ 关键错误：服务启动时初始化机器人失败: {e}", exc_info=True)
         # 在生产环境中，可以考虑让服务启动失败
         # raise e
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if message_bus:
+        await message_bus.close()
 
 # --- API Endpoints ---
 @app.get("/api/v1/health", tags=["通用"])
@@ -82,4 +122,29 @@ async def trigger_trading_cycle():
         result = await trader_instance.run_one_cycle()
         return result
     raise HTTPException(status_code=503, detail="机器人尚未初始化或初始化失败。")
+
+
+@app.websocket("/ws/market-data")
+async def websocket_market_data(websocket: WebSocket):
+    """
+    WebSocket 端点：实时广播市场数据、策略信号和风险状态
+    """
+    await websocket.accept()
+    try:
+        # 创建临时消费者组用于此连接
+        # 注意：实际生产中可能需要更复杂的消费者组管理
+        # 这里为了简化，我们假设前端通过 WS 订阅所有相关频道
+        
+        # 订阅多个相关流
+        streams = ["market.tick", "portfolio.risk", "strategy.signal", "market.macro"]
+        
+        # 启动一个异步任务从 Redis 消费并推送到 WebSocket
+        async for message in message_bus.subscribe_multiple(streams):
+            await websocket.send_json(message)
+            
+    except WebSocketDisconnect:
+        logging.info("WebSocket disconnected")
+    except Exception as e:
+        logging.error(f"WebSocket error: {e}")
+        await websocket.close()
 

@@ -74,3 +74,41 @@ class RedisStreamBus(MessageBus):
 
     async def close(self) -> None:
         await self._client.close()
+
+    async def subscribe_multiple(self, streams: list[str]) -> AsyncIterator[Dict]:
+        """同时订阅多个流"""
+        stream_map = {self._stream(s): "0-0" for s in streams}
+        
+        # 确保所有 group 存在
+        for s in stream_map:
+            await self._ensure_group(s)
+            
+        while True:
+            response = await self._client.xreadgroup(
+                groupname=self._group_name,
+                consumername=self._consumer_name,
+                streams=stream_map,
+                count=10,
+                block=2000,
+            )
+            
+            if not response:
+                yield {"type": "ping", "timestamp": "keep-alive"}
+                continue
+                
+            for stream_name, messages in response:
+                # 解析流名称，去掉前缀
+                stream_key = stream_name.decode("utf-8").replace(f"{self._stream_prefix}:", "")
+                
+                for message_id, data in messages:
+                    raw = data.get(b"data", b"{}")
+                    try:
+                        payload = json.loads(raw)
+                        # 注入事件类型
+                        payload["event_type"] = stream_key
+                        yield payload
+                        
+                        # 确认消息
+                        await self._client.xack(stream_name, self._group_name, message_id)
+                    except json.JSONDecodeError:
+                        await self._client.xack(stream_name, self._group_name, message_id)

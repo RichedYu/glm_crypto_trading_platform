@@ -1,24 +1,25 @@
-import { useEffect, useState } from 'react'
-import { createMarketSocket } from '../services/websocket'
+import { useEffect, useState, useRef } from "react";
+import { wsService } from "../services/websocket";
 
-export const useMarketData = (symbol: string) => {
-  const [price, setPrice] = useState<number>()
+export const useMarketData = <T>(eventType: string, initialState?: T) => {
+  const [data, setData] = useState<T | undefined>(initialState);
+  // 使用 ref 来避免闭包问题，尽管这里主要是状态更新
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    if (!symbol) return
-    let cleanup: (() => void) | undefined
-    try {
-      cleanup = createMarketSocket(symbol, (payload) => {
-        setPrice(payload.price)
-      })
-    } catch (error) {
-      console.warn('[WS] fallback to mock stream', error)
-    }
+    isMounted.current = true;
+
+    const unsubscribe = wsService.subscribe(eventType, (payload) => {
+      if (isMounted.current) {
+        setData(payload as T);
+      }
+    });
 
     return () => {
-      if (cleanup) cleanup()
-    }
-  }, [symbol])
+      isMounted.current = false;
+      unsubscribe();
+    };
+  }, [eventType]);
 
-  return price
-}
+  return data;
+};

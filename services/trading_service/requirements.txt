@@ -10,3 +10,4 @@ aiohttp
 requests
 tenacity
 psutil
+redis>=4.5.0

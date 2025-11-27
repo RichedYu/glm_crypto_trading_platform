@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Literal, List
 
 from pydantic import BaseModel, Field
@@ -13,7 +13,7 @@ class MarketTickEvent(BaseModel):
     volume: float = 0.0
     bid: Optional[float] = None
     ask: Optional[float] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -26,7 +26,7 @@ class StrategySignalEvent(BaseModel):
     target_price: Optional[float] = None
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -42,7 +42,7 @@ class StrategyIntentEvent(BaseModel):
     confidence: float = 1.0
     reason: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ExecutionCommandEvent(BaseModel):
@@ -55,7 +55,7 @@ class ExecutionCommandEvent(BaseModel):
     quantity: float = 0.0
     approved_by: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class OrderCommand(BaseModel):
@@ -80,7 +80,7 @@ class OrderFillEvent(BaseModel):
     quantity: float
     price: float
     fee: float = 0.0
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -92,7 +92,7 @@ class RiskAlertEvent(BaseModel):
     message: str
     current_value: float
     threshold_value: float
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -101,7 +101,7 @@ class StateSnapshotEvent(BaseModel):
     strategy_id: str
     state_type: Literal["position", "balance", "orders", "full"]
     snapshot: Dict[str, Any]
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class PositionUpdateEvent(BaseModel):
@@ -111,7 +111,7 @@ class PositionUpdateEvent(BaseModel):
     quantity: float
     avg_price: float
     unrealized_pnl: float = 0.0
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -137,7 +137,7 @@ class OptionChainData(BaseModel):
     open_interest: float
     implied_volatility: float  # 隐含波动率(P-World)
     greeks: Optional[OptionGreeks] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class VolatilitySurfaceEvent(BaseModel):
@@ -147,7 +147,7 @@ class VolatilitySurfaceEvent(BaseModel):
     atm_iv: float  # 平值隐含波动率
     iv_skew: Dict[str, float]  # 波动率偏斜 {strike: iv}
     term_structure: Dict[str, float]  # 期限结构 {expiry: iv}
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -159,7 +159,7 @@ class VolatilityForecastEvent(BaseModel):
     confidence: float  # 置信度
     model_version: str
     features_used: List[str]
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -170,7 +170,7 @@ class MacroStateEvent(BaseModel):
     regime_score: float = 0.0
     sentiment_score: Optional[float] = None
     fomo_score: Optional[float] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -183,5 +183,5 @@ class PortfolioRiskEvent(BaseModel):
     total_rho: float
     position_ratio: Optional[float] = None
     leverage: Optional[float] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = Field(default_factory=dict)
