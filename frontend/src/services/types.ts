@@ -45,7 +45,7 @@ export interface TradingSnapshot {
 }
 
 export interface SentimentSnapshot {
-  value: number // -100 ~ 100
+  value: number
   delta24h: number
   trend: Array<{ time: string; sentiment: number; price: number }>
   topics: SentimentTopic[]

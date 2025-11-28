@@ -19,7 +19,7 @@ class PositionControllerS1:
                              获取账户信息、执行订单和日志记录。
         """
         self.trader = trader_instance  # 保存对主 trader 实例的引用
-        self.config = trader_instance.config # 访问配置
+        self.settings = trader_instance.settings # 访问配置 (使用 settings 而非 config)
         self.logger = logging.getLogger(self.__class__.__name__) # 创建独立的 logger
 
         # S1 策略参数 (从配置或直接赋值)

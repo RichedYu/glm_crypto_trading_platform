@@ -6,6 +6,9 @@ FROM python:3.10-slim
 # 在容器内创建一个工作目录
 WORKDIR /app
 
+# 使用国内 pip 镜像源
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
 # 将依赖文件复制到容器中
 COPY requirements.txt .
 

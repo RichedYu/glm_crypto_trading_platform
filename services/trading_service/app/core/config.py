@@ -79,6 +79,16 @@ class Settings(BaseSettings):
     MAX_RETRIES: int = 5 # API请求最大重试次数
     RISK_CHECK_INTERVAL: int = 300 # 风控检查间隔(秒)
     DEBUG_MODE: bool = False
+    
+    # --- 7. Redis 配置 ---
+    REDIS_HOST: str = "glm_redis"  # Docker 网络中的 Redis 主机名
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    
+    @property
+    def redis_url(self) -> str:
+        """构建 Redis 连接 URL"""
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     class Config:
         # Pydantic的内部配置类，告诉它去哪里找配置文件
